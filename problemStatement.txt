@@ -1,0 +1,1194 @@
+PROJECT: Google Photos — AI-Powered Discovery Engine for Vaguely Remembered Photo Retrieval
+
+==================================================
+
+1. PROJECT CONTEXT
+   ==================================================
+
+You are a Product Manager on the Core Experience team at Google Photos.
+
+Over years of usage, users accumulate thousands of photos, videos, screenshots, documents, receipts, memes, product images, and other visual memories in Google Photos.
+
+Google Photos search works well when users know what they are looking for and can express it clearly.
+
+However, retrieval becomes much harder when memory is incomplete.
+
+Examples:
+
+* “That small café we went to during our Goa trip.”
+* “The picture of the medicine I took when I was sick last year.”
+* “The screenshot of a dress I wanted to buy a few months ago.”
+* “That photo with my college friends at some wedding.”
+* “The receipt I photographed when I bought my laptop.”
+
+In these situations, the user believes the visual item exists but may not remember:
+
+* when it was taken
+* where it was taken
+* the exact object/name
+* the album it belongs to
+* exact words visible in the image
+* the exact person involved
+* the filename
+* the source of a screenshot
+* the exact event
+* the exact sequence of events
+
+The user may still retain partial memories such as:
+
+* what was happening
+* who they were with
+* why they took the photo
+* what the image roughly looked like
+* an approximate place
+* an approximate time
+* what happened before or after
+* an emotional or situational context
+* a life event
+* a visual characteristic
+* the purpose of the photo
+
+The company strategic goal is:
+
+INCREASE THE PERCENTAGE OF USERS WHO SUCCESSFULLY RETRIEVE A PHOTO THEY REMEMBER BUT CANNOT PRECISELY DESCRIBE WHEN THEY START SEARCHING.
+
+This project is NOT about improving Google Photos search in general.
+
+The purpose is to understand:
+
+1. how people remember old visual information,
+2. what information remains in memory,
+3. what information has been forgotten,
+4. how users attempt to translate incomplete memory into searches,
+5. where the retrieval journey breaks,
+6. what users do after a failed search,
+7. what workarounds they use,
+8. which retrieval problems represent meaningful product opportunities.
+
+==================================================
+2. PRIMARY PROJECT OBJECTIVE
+============================
+
+Build an AI-powered discovery engine that analyzes publicly available user conversations about photo and visual-item retrieval at scale.
+
+The engine must go beyond:
+
+* sentiment analysis,
+* keyword frequency,
+* generic review summarization,
+* positive/negative classification,
+* generic complaints about Google Photos.
+
+The engine must convert messy public conversations into structured behavioral evidence that helps a Product Manager understand:
+
+WHAT USERS REMEMBER
++
+WHAT USERS FORGET
++
+WHAT THEY TRY
++
+WHERE RETRIEVAL FAILS
++
+WHAT THEY DO NEXT
++
+WHICH PROBLEMS MAY REPRESENT PRODUCT OPPORTUNITIES.
+
+The system should help answer questions such as:
+
+* What kinds of old visual items do users struggle to retrieve?
+* What clues do users still remember?
+* What information have they forgotten?
+* How do users formulate searches when memory is incomplete?
+* Which remembered clues fail to make it into users’ search queries?
+* Which clues appear to be poorly understood by the current retrieval experience?
+* What happens after the first failed attempt?
+* How do users refine searches?
+* When do users manually browse instead?
+* When do users abandon retrieval?
+* What workarounds do users use?
+* Do retrieval problems differ for screenshots, travel photos, documents, medicine photos, receipts, or emotional memories?
+* Which retrieval failure modes appear most common or severe?
+* Which opportunity areas deserve further validation through primary user interviews?
+
+==================================================
+3. CORE RESEARCH QUESTION
+=========================
+
+The central research question is:
+
+“When people know that a visual item exists but cannot precisely describe it, what information do they still remember, what information have they forgotten, and where does the retrieval process fail despite those remaining memories?”
+
+The system should be designed around answering this question.
+
+==================================================
+4. DEFINITION OF A VAGUELY REMEMBERED VISUAL ITEM
+=================================================
+
+For this project:
+
+A vaguely remembered visual item is:
+
+“A visual item that a user believes exists in their library and can recall through one or more partial contextual, semantic, visual, emotional, temporal, relational, or situational clues, but cannot precisely identify using known metadata or an exact search query.”
+
+Visual items may include:
+
+* photos
+* videos
+* screenshots
+* photographed documents
+* receipts
+* medicine/product photos
+* memes
+* travel memories
+* signs
+* event photos
+* saved visual references
+* other visual items
+
+==================================================
+5. DEFINITION OF SUCCESSFUL RETRIEVAL
+=====================================
+
+A retrieval attempt begins when:
+
+A user intentionally tries to locate a specific visual item that they believe exists, but they cannot precisely locate or describe it at the beginning of the attempt.
+
+A retrieval attempt may involve:
+
+* multiple searches,
+* query reformulation,
+* scrolling,
+* filtering,
+* navigating by date,
+* searching by person,
+* searching by place,
+* switching strategies,
+* using another application,
+* asking another person,
+* or another workaround.
+
+Successful retrieval occurs when:
+
+The user identifies the intended visual item, or an acceptable version of the intended item, during the retrieval attempt.
+
+Showing search results alone does NOT count as successful retrieval.
+
+==================================================
+6. PROJECT SCOPE
+================
+
+IN SCOPE:
+
+Cases where:
+
+* the user believes a specific visual item exists,
+* the user is intentionally trying to retrieve it,
+* their memory is incomplete,
+* they retain at least one useful clue,
+* retrieval requires searching, browsing, refinement, reconstruction, or a workaround.
+
+Examples:
+
+* finding an old medicine photo without knowing its name or date,
+* retrieving a café photo from a trip without remembering the café name,
+* finding an old screenshot without remembering when it was taken,
+* finding a photo from an event without remembering the exact event date,
+* locating a photographed receipt using approximate context,
+* finding a visual item based on what happened before or after it.
+
+OUT OF SCOPE:
+
+Do not treat the following as vague-memory retrieval problems unless a separate relevant retrieval episode is also present:
+
+* backup failure
+* photo deletion
+* sync problems
+* storage complaints
+* editing problems
+* sharing problems
+* account access
+* upload failures
+* duplicate management
+* generic application performance complaints
+* casual browsing
+* memory/recommendation features
+* retrieving a photo when the user already knows the exact date/location
+* general Google Photos search complaints without evidence of an actual vague-memory retrieval scenario
+
+==================================================
+7. RETRIEVAL JOURNEY
+====================
+
+Use the following as the initial retrieval journey model:
+
+1. RETRIEVAL INTENT
+   User decides that they want to find a specific visual item.
+
+2. MEMORY CLUES AVAILABLE
+   User remembers some information about the target.
+
+3. CLUE EXPRESSION
+   User attempts to translate memory into a query, search action, filter, or browsing strategy.
+
+4. SYSTEM INTERPRETATION
+   The system interprets the user's clues.
+
+5. CANDIDATE RETRIEVAL
+   Potentially relevant results are returned.
+
+6. CANDIDATE EVALUATION
+   The user scans and evaluates the results.
+
+7. TARGET RECOGNITION
+   The user recognizes the intended visual item.
+
+8. REFINEMENT
+   If unsuccessful, the user modifies the query or retrieval strategy.
+
+9. SUCCESS OR ABANDONMENT
+   The user either retrieves the target or gives up.
+
+This framework is a starting hypothesis.
+
+The discovery engine must allow additional behaviors or failure stages to emerge from the evidence.
+
+==================================================
+8. INITIAL FAILURE-MODE TAXONOMY
+================================
+
+The discovery engine should classify retrieval problems into the following initial categories.
+
+These categories are hypotheses and may evolve.
+
+A. EXPRESSION FAILURE
+
+The user remembers useful information but does not know how to translate that memory into an effective search.
+
+Example:
+
+Memory:
+“We went to this café after parasailing near the beach.”
+
+Query:
+“Goa café”
+
+The memory is richer than what the user expresses.
+
+B. INTERPRETATION FAILURE
+
+The user provides useful clues but the system appears unable to understand, combine, or correctly use them.
+
+Example:
+
+“Photo of the medicine I took when I had fever last year.”
+
+C. CANDIDATE RETRIEVAL FAILURE
+
+The intended item or sufficiently relevant candidates do not appear.
+
+D. RECOGNITION FAILURE
+
+Potentially correct results are available but the user struggles to identify the target among many visually similar or poorly contextualized results.
+
+E. REFINEMENT FAILURE
+
+The first attempt fails, and the user does not know how to progressively improve the retrieval attempt.
+
+F. OTHER / EMERGING FAILURE
+
+Evidence indicates a meaningful failure mode that is not represented by the existing framework.
+
+A single retrieval episode may contain multiple failure modes.
+
+The system should distinguish:
+
+* earliest failure,
+* primary failure,
+* secondary failures.
+
+==================================================
+9. MEMORY-CLUE TAXONOMY
+=======================
+
+For each retrieval episode, identify what the user still remembers.
+
+Initial clue categories:
+
+* OBJECT / CONTENT
+  What appears in the image.
+
+* PEOPLE
+  Who appears in or relates to the image.
+
+* LOCATION
+  Approximate or precise geographic/environmental context.
+
+* APPROXIMATE TIME
+  Examples: last winter, during college, two years ago.
+
+* EVENT
+  Wedding, vacation, festival, party, graduation, etc.
+
+* VISUAL ATTRIBUTES
+  Colors, objects, layout, clothing, setting, shape, visual appearance.
+
+* PURPOSE / INTENTION
+  Why the user took or saved the visual item.
+
+* ACTIVITY
+  What the user or others were doing.
+
+* SEQUENCE
+  What occurred immediately before or after the item.
+
+* RELATIONSHIP
+  Relationship between people, places, events, or activities.
+
+* LIFE EVENT
+  Broader personal milestone or period.
+
+* EMOTIONAL / CONTEXTUAL MEMORY
+  How the moment felt or why it was personally memorable.
+
+* SOURCE
+  Screenshot, WhatsApp, Instagram, camera, downloaded image, etc.
+
+* TEXT
+  Partial remembered text inside the image.
+
+* OTHER
+  Clue not covered above.
+
+The system must allow multiple clues per retrieval episode.
+
+Whenever possible, preserve evidence supporting each clue.
+
+==================================================
+10. FORGOTTEN-INFORMATION TAXONOMY
+==================================
+
+Identify what the user appears not to know or remember.
+
+Possible categories:
+
+* exact date
+* exact time
+* exact location
+* place name
+* object name
+* medicine/product name
+* person's identity
+* exact event
+* filename
+* album
+* folder
+* source application
+* screenshot origin
+* exact wording
+* sequence/date relationship
+* chronology
+* other
+
+Do not infer forgotten information without evidence.
+
+==================================================
+11. PUBLIC DATA SOURCES
+=======================
+
+The engine should support user-feedback data from publicly available sources such as:
+
+* Reddit
+* Google Photos Community / Help discussions
+* Google Play Store reviews
+* Apple App Store reviews
+* YouTube comments
+* public forums
+* public social-media conversations
+* blogs or other relevant public discussions
+
+The initial implementation does NOT need to automate scraping every platform if this creates unnecessary complexity.
+
+The engine must at minimum support:
+
+* importing structured CSV/JSON data,
+* importing manually collected public feedback,
+* preserving source URLs,
+* preserving source platform,
+* preserving raw text.
+
+Where practical and legally/technically feasible, automated collection may be added.
+
+The system must never invent source data.
+
+==================================================
+12. RAW DATA REQUIREMENTS
+=========================
+
+Each source record should support:
+
+* record_id
+* platform
+* source_url
+* date_posted
+* author identifier if publicly available and appropriate
+* title if present
+* raw_text
+* thread_context
+* imported_at
+* collection_method
+
+Personal identifiers should not be required for the research.
+
+==================================================
+13. RELEVANCE CLASSIFICATION
+============================
+
+Every collected record must first pass through a relevance classifier.
+
+A record is relevant when it contains meaningful evidence of a vaguely remembered visual retrieval scenario.
+
+The classifier should determine:
+
+* relevant: true/false
+* confidence
+* reason
+* retrieval target if visible
+* evidence of vague/incomplete memory
+
+The system should filter generic complaints before downstream analysis.
+
+==================================================
+14. STRUCTURED RETRIEVAL-EPISODE EXTRACTION
+===========================================
+
+For each relevant record, create a structured retrieval episode.
+
+Each episode should contain:
+
+SOURCE INFORMATION
+
+* episode_id
+* record_id
+* platform
+* source_url
+* raw_text
+
+TARGET
+
+* visual_item_type
+* retrieval_goal
+* why_user_needs_item
+
+MEMORY
+
+* remembered_clues
+* clue_categories
+* supporting evidence
+* confidence
+
+FORGOTTEN INFORMATION
+
+* forgotten_attributes
+* evidence
+* confidence
+
+SEARCH / RETRIEVAL BEHAVIOR
+
+* initial query if available
+* subsequent query
+* search method
+* filters used
+* browsing behavior
+* scrolling behavior
+* strategy changes
+* refinement attempts
+
+FAILURE
+
+* earliest_failure_stage
+* primary_failure_mode
+* secondary_failure_modes
+* confidence
+* evidence
+* reasoning
+
+WORKAROUND
+
+Examples:
+
+* manual scrolling
+* browsing by date
+* browsing by location
+* browsing by person
+* checking albums
+* searching another app
+* checking messages
+* asking another person
+* searching cloud/device folders
+* Google Search
+* giving up
+* other
+
+OUTCOME
+
+* success
+* partial success
+* failure
+* abandoned
+* unknown
+
+IMPACT
+
+* functional or emotional retrieval
+* urgency if supported
+* frustration if supported
+* consequence if supported
+
+Never invent behavior that is not visible in the source.
+
+==================================================
+15. OBSERVATION VS INFERENCE
+============================
+
+This is a critical requirement.
+
+The discovery engine must clearly distinguish:
+
+A. OBSERVED EVIDENCE
+Directly supported by user language or behavior.
+
+B. AI INTERPRETATION
+A reasonable interpretation based on the evidence.
+
+C. HYPOTHESIS
+A possible explanation that requires more validation.
+
+The interface and generated insights should not present hypotheses as facts.
+
+==================================================
+16. PATTERN-DISCOVERY REQUIREMENTS
+==================================
+
+The engine must analyze retrieval episodes across multiple dimensions.
+
+It should support analysis such as:
+
+* remembered clue frequency
+* forgotten-information frequency
+* remembered × forgotten combinations
+* failure mode frequency
+* retrieval target × failure mode
+* clue type × failure mode
+* workaround × outcome
+* search behavior × success
+* refinement behavior × success
+* emotional vs functional retrieval
+* target type × remembered clue
+* target type × workaround
+* platform/source distribution
+
+The system should identify non-obvious recurring patterns.
+
+Examples only:
+
+* users may remember purpose but not object name,
+* users may remember event but not date,
+* users may possess contextual clues but omit them from search queries,
+* screenshot retrieval may fail differently from travel-memory retrieval,
+* users may abandon after repeated keyword reformulation,
+* target recognition may be difficult even when candidate retrieval succeeds.
+
+These examples are hypotheses.
+
+Do not force the dataset to reproduce them.
+
+==================================================
+17. OPPORTUNITY DISCOVERY
+=========================
+
+The discovery engine should identify distinct product opportunity areas.
+
+It must NOT collapse everything into:
+
+“Users have difficulty finding old photos.”
+
+Each opportunity should describe:
+
+* retrieval scenario
+* target type or user behavior
+* remembered information
+* forgotten information
+* failure stage
+* observed behavior
+* current workaround
+* outcome
+* root-cause hypothesis
+* evidence count
+* source diversity
+* severity/friction
+* abandonment if visible
+* evidence confidence
+* uncertainty
+* potential relevance to retrieval success
+
+Potential comparison dimensions:
+
+* prevalence
+* severity
+* friction
+* abandonment
+* workaround cost
+* breadth
+* evidence strength
+* likely AI leverage
+* relevance to the business metric
+
+Frequency alone must NOT determine opportunity importance.
+
+==================================================
+18. ROOT-CAUSE ANALYSIS
+=======================
+
+For every meaningful problem area, distinguish:
+
+SYMPTOM
+What users say went wrong.
+
+BEHAVIOR
+What users actually did.
+
+MEMORY STATE
+What information they retained.
+
+SYSTEM / INTERACTION GAP
+Why the retained information did not successfully contribute to retrieval.
+
+ROOT-CAUSE HYPOTHESIS
+The deepest explanation supported by current evidence.
+
+ALTERNATIVE EXPLANATIONS
+Other plausible causes.
+
+EVIDENCE STRENGTH
+Strong / moderate / weak.
+
+Do not automatically interpret every failure as a search-ranking problem.
+
+==================================================
+19. DASHBOARD REQUIREMENTS
+==========================
+
+Build a simple but polished research dashboard.
+
+Required areas:
+
+A. OVERVIEW
+
+Show:
+
+* total imported records
+* relevant retrieval episodes
+* irrelevant/excluded records
+* number of platforms
+* visual-item-type distribution
+* retrieval-outcome distribution
+* key dataset statistics
+
+B. MEMORY EXPLORER
+
+Show:
+
+* most common remembered clues
+* most common forgotten information
+* remembered × forgotten combinations
+* clue patterns by target type
+
+C. FAILURE EXPLORER
+
+Show:
+
+* failure mode distribution
+* failure by visual-item type
+* failure by clue type
+* failure by outcome
+* primary vs secondary failure
+
+D. BEHAVIOR EXPLORER
+
+Show:
+
+* search strategies
+* refinements
+* workarounds
+* abandonment patterns
+* strategy changes
+
+E. OPPORTUNITY EXPLORER
+
+Show distinct retrieval opportunity areas.
+
+Allow users to compare opportunities using evidence.
+
+F. EVIDENCE EXPLORER
+
+Users should be able to inspect the evidence behind an insight.
+
+Display:
+
+* raw conversation
+* extracted episode
+* remembered clues
+* forgotten attributes
+* failure classification
+* workaround
+* outcome
+* source URL
+* AI reasoning/confidence where appropriate
+
+G. ASK THE RESEARCH
+
+Provide a natural-language research query interface.
+
+Examples:
+
+* “What do users remember when trying to find travel photos?”
+* “What clues do users possess but fail to express?”
+* “Compare screenshot retrieval with travel-photo retrieval.”
+* “What happens after the first failed search?”
+* “Which problems lead to abandonment?”
+* “Show evidence for recognition failure.”
+* “What workarounds do users use for old screenshots?”
+* “Which findings are supported across multiple platforms?”
+
+Responses must be grounded only in the dataset.
+
+==================================================
+20. AI RESEARCH ASSISTANT REQUIREMENTS
+======================================
+
+The Ask the Research feature must use grounded retrieval / RAG or an equivalent evidence-grounding mechanism.
+
+For each response:
+
+1. State the finding.
+2. Quantify supporting evidence where possible.
+3. Explain relevant user behavior.
+4. Provide representative evidence.
+5. Provide source links.
+6. Mention contradictory evidence when present.
+7. State confidence.
+8. Separate evidence from interpretation.
+
+If the dataset cannot answer a question, respond clearly that insufficient evidence exists.
+
+Never:
+
+* fabricate user quotes,
+* fabricate source links,
+* fabricate counts,
+* use external general knowledge as if it came from the dataset.
+
+==================================================
+21. INSIGHT REQUIREMENTS
+========================
+
+Every major generated insight should ideally include:
+
+* insight statement
+* number of supporting retrieval episodes
+* percentage of relevant dataset if appropriate
+* source diversity
+* relevant segment
+* supporting evidence
+* representative snippets
+* links to source conversations
+* contradictory evidence
+* interpretation
+* confidence
+* research limitation
+
+Insights should remain traceable back to individual evidence records.
+
+==================================================
+22. QUALITY / BIAS CHECKS
+=========================
+
+The system should support checks for:
+
+* duplicate conversations
+* repeated cross-posts
+* unsupported AI claims
+* small-sample conclusions
+* irrelevant records included as retrieval episodes
+* sentiment being interpreted as severity
+* complaint frequency being interpreted as opportunity size
+* hypotheses being presented as facts
+* source overrepresentation
+* AI-generated quotes
+* broken/missing source URLs
+* overlapping opportunity categories
+* premature solution bias
+
+==================================================
+23. BUSINESS-METRIC CONNECTION
+==============================
+
+The discovery engine should support analysis of the business metric:
+
+VAGUELY REMEMBERED RETRIEVAL SUCCESS RATE
+
+Conceptual retrieval funnel:
+
+Retrieval intent
+→ useful memory clues
+→ clue expression
+→ system interpretation
+→ candidate retrieval
+→ candidate evaluation
+→ target recognition
+→ refinement
+→ retrieval success
+
+The engine should help identify where the largest or most meaningful opportunity may exist.
+
+It should NOT assume the final solution.
+
+==================================================
+24. IMPORTANT PRODUCT-RESEARCH PRINCIPLES
+=========================================
+
+Follow these principles throughout implementation.
+
+1. Do not start with a predetermined solution.
+
+2. Do not assume conversational search is the answer.
+
+3. Do not assume natural-language understanding is the primary problem.
+
+4. Do not treat user complaints as root causes.
+
+5. Do not treat sentiment as product opportunity.
+
+6. Do not treat frequency alone as importance.
+
+7. Preserve contradictory evidence.
+
+8. Preserve source traceability.
+
+9. Distinguish observation from interpretation.
+
+10. Allow new categories to emerge from data.
+
+11. Keep the discovery engine focused on behavior, memory, retrieval failures, and workarounds.
+
+==================================================
+25. TARGET USERS OF THE DISCOVERY ENGINE
+========================================
+
+The primary user of this application is a Product Manager / Product Researcher.
+
+The system should help the PM:
+
+* explore real-user evidence,
+* understand retrieval behavior,
+* identify patterns,
+* compare different retrieval problems,
+* form research hypotheses,
+* select areas for user interviews,
+* and make evidence-based product decisions.
+
+The tool is NOT intended to be a production Google Photos feature.
+
+It is a research/discovery tool.
+
+==================================================
+26. UX REQUIREMENTS
+===================
+
+The application should be:
+
+* clear,
+* professional,
+* research-oriented,
+* easy to demo,
+* visually polished,
+* simple enough to understand quickly.
+
+Avoid unnecessary complexity.
+
+The dashboard should make the evidence-to-insight relationship obvious.
+
+Use charts only where they improve comprehension.
+
+Tables, filters, evidence cards, and drill-downs are encouraged.
+
+Every important insight should be explorable down to supporting evidence.
+
+==================================================
+27. TECHNICAL REQUIREMENTS
+==========================
+
+The exact stack may be selected during design.
+
+Preferred high-level architecture:
+
+Public/Imported User Feedback
+↓
+Data Cleaning / Deduplication
+↓
+Relevance Classification
+↓
+AI Retrieval-Episode Extraction
+↓
+Structured Database
+↓
+Aggregation / Pattern Analysis
+↓
+Opportunity Analysis
+↓
+Evidence-grounded RAG
+↓
+Research Dashboard + Ask-the-Research Assistant
+
+The implementation should prioritize:
+
+* simplicity,
+* explainability,
+* deployability,
+* evidence traceability,
+* fast iteration.
+
+Do not over-engineer.
+
+The entire architecture should be explainable on one presentation slide.
+
+==================================================
+28. DATA STORAGE
+================
+
+The data model should preserve at least three layers.
+
+LAYER 1 — RAW SOURCE DATA
+
+Original imported conversations.
+
+LAYER 2 — STRUCTURED RETRIEVAL EPISODES
+
+AI-extracted behavioral information.
+
+LAYER 3 — GENERATED INSIGHTS / OPPORTUNITIES
+
+Aggregated patterns linked back to supporting episodes.
+
+Never overwrite raw source text with AI-generated data.
+
+==================================================
+29. DEPLOYMENT REQUIREMENT
+==========================
+
+The final discovery engine should be deployed through a publicly accessible link.
+
+Another person should be able to:
+
+* open the application,
+* explore the dataset,
+* inspect findings,
+* view evidence,
+* compare opportunity areas,
+* and ask research questions.
+
+Do not expose private API keys or sensitive credentials.
+
+==================================================
+30. PROJECT DELIVERABLES THIS ENGINE SUPPORTS
+=============================================
+
+The larger PM project requires:
+
+1. Public link to the AI-Powered Discovery Engine.
+
+2. One presentation slide explaining:
+
+   * data sources,
+   * processing pipeline,
+   * AI analysis,
+   * structured evidence,
+   * dashboard,
+   * RAG/research assistant.
+
+3. Discovery findings that will inform:
+
+   * target user segment,
+   * user interview design,
+   * retrieval scenarios,
+   * opportunity selection,
+   * root-cause hypotheses,
+   * final problem definition.
+
+The discovery engine is NOT itself the final Google Photos solution.
+
+A separate user-facing AI-native MVP will be created later after research and problem definition.
+
+==================================================
+31. RELATIONSHIP TO USER INTERVIEWS
+===================================
+
+The discovery engine produces hypotheses.
+
+These hypotheses will later be validated through 5–6 user interviews.
+
+The engine should therefore produce a final synthesis divided into:
+
+WHAT WE KNOW
+Strongly supported observational evidence.
+
+WHAT WE THINK
+Interpretations and root-cause hypotheses.
+
+WHAT WE STILL NEED TO VALIDATE
+Questions for primary user research.
+
+==================================================
+32. INITIAL ACCEPTANCE CRITERIA
+===============================
+
+The discovery engine is considered functionally complete for this project when:
+
+1. Public user-feedback records can be imported.
+
+2. Relevant retrieval conversations can be separated from irrelevant feedback.
+
+3. Relevant records are transformed into structured retrieval episodes.
+
+4. The engine identifies:
+
+   * remembered clues,
+   * forgotten information,
+   * retrieval behavior,
+   * failure modes,
+   * workarounds,
+   * outcomes.
+
+5. Users can explore aggregated patterns.
+
+6. Users can compare at least several distinct retrieval opportunity areas.
+
+7. Every major insight can be traced back to source evidence.
+
+8. Users can inspect raw source conversations.
+
+9. Users can ask natural-language questions about the research dataset.
+
+10. AI answers remain grounded in the available research records.
+
+11. Unsupported questions are clearly marked as lacking sufficient evidence.
+
+12. The application is deployable through a public URL.
+
+13. The architecture is simple enough to explain clearly on one slide.
+
+==================================================
+33. DESIGN.MD EXPECTATION
+=========================
+
+Based on this problem statement, create a design.md that defines:
+
+* overall architecture
+* chosen technology stack
+* component architecture
+* user flows
+* page/dashboard structure
+* database/data model
+* AI processing pipeline
+* prompt/agent architecture
+* relevance-classification logic
+* retrieval-episode extraction logic
+* pattern-discovery logic
+* opportunity-generation logic
+* RAG architecture
+* citation/evidence architecture
+* deduplication strategy
+* error handling
+* security/API-key handling
+* deployment architecture
+* UX design
+* testing strategy
+
+Keep the design realistic and implementable.
+
+Do not implement anything while generating design.md.
+
+==================================================
+34. IMPLEMENTATION.MD EXPECTATION
+=================================
+
+After design.md is finalized, create implementation.md.
+
+implementation.md should divide the build into small sequential phases.
+
+Each phase should include:
+
+* objective
+* files/components to create
+* implementation tasks
+* expected output
+* test/validation criteria
+* dependencies
+* definition of done
+
+Implementation should be incremental.
+
+Recommended high-level sequence:
+
+Phase 1 — Project setup and basic UI
+
+Phase 2 — Database/data model
+
+Phase 3 — Data import
+
+Phase 4 — Cleaning and deduplication
+
+Phase 5 — Relevance classifier
+
+Phase 6 — Retrieval-episode extraction
+
+Phase 7 — Dashboard analytics
+
+Phase 8 — Evidence explorer
+
+Phase 9 — Pattern discovery
+
+Phase 10 — Opportunity explorer
+
+Phase 11 — Ask-the-Research RAG
+
+Phase 12 — Insight quality checks
+
+Phase 13 — Demo dataset / validation
+
+Phase 14 — deployment
+
+Phase 15 — final QA
+
+Do not implement all phases at once.
+
+implementation.md should be written so each phase can be completed and tested before moving to the next.
+
+==================================================
+35. FINAL INSTRUCTION
+=====================
+
+First:
+
+Read and understand this entire problem statement.
+
+Then create ONLY:
+
+1. design.md
+2. implementation.md
+
+Do not begin coding yet.
+
+Do not prematurely select a final Google Photos product solution.
+
+The immediate goal is to build a rigorous AI-powered discovery system that helps uncover and compare vague-memory retrieval problems using traceable real-user evidence.
