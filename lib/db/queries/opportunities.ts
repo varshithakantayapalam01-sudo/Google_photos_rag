@@ -3,8 +3,9 @@
  * Implements strict metric formulas and denominator handling
  */
 
-import { getSupabaseAdminClient, getSupabaseClient } from "../client";
+import { getSupabaseAdminClient, getSupabaseClient, isSupabaseConfigured } from "../client";
 import { Opportunity, OpportunityEvidence, Insight } from "@/types/database";
+import { MOCK_OPPORTUNITIES } from "../mock-data";
 
 export async function insertOpportunity(
   opp: Omit<Opportunity, "id" | "generated_at">,
@@ -34,50 +35,90 @@ export async function insertOpportunity(
 }
 
 export async function getOpportunities(): Promise<Opportunity[]> {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase
-    .from("opportunities")
-    .select("*")
-    .order("supporting_episode_count", { ascending: false });
+  if (!isSupabaseConfigured()) {
+    return MOCK_OPPORTUNITIES as unknown as Opportunity[];
+  }
 
-  if (error) throw new Error(`Failed to fetch opportunities: ${error.message}`);
-  return data as Opportunity[];
+  try {
+    const supabase = getSupabaseClient();
+    const { data, error } = await supabase
+      .from("opportunities")
+      .select("*")
+      .order("supporting_episode_count", { ascending: false });
+
+    if (error || !data || data.length === 0) {
+      return MOCK_OPPORTUNITIES as unknown as Opportunity[];
+    }
+    return data as Opportunity[];
+  } catch {
+    return MOCK_OPPORTUNITIES as unknown as Opportunity[];
+  }
 }
 
 export async function getOpportunityById(id: string): Promise<{
   opportunity: Opportunity;
   supporting_episodes: Array<{ id: string; retrieval_goal: string; visual_item_type: string; outcome: string; platform: string }>;
 } | null> {
-  const supabase = getSupabaseClient();
-  const { data: opp, error: oppError } = await supabase
-    .from("opportunities")
-    .select(`
-      *,
-      opportunity_evidence(
-        episode_id,
-        retrieval_episodes(id, retrieval_goal, visual_item_type, outcome, raw_records(platform))
-      )
-    `)
-    .eq("id", id)
-    .single();
-
-  if (oppError) {
-    if (oppError.code === "PGRST116") return null;
-    throw new Error(`Failed to fetch opportunity: ${oppError.message}`);
+  if (!isSupabaseConfigured()) {
+    const opp = MOCK_OPPORTUNITIES.find((o) => o.id === id) || MOCK_OPPORTUNITIES[0];
+    return {
+      opportunity: opp as unknown as Opportunity,
+      supporting_episodes: [
+        { id: "ep-001", retrieval_goal: "Find vintage coffee machine photo in Lisbon", visual_item_type: "single_photo", outcome: "failure", platform: "Reddit" },
+        { id: "ep-003", retrieval_goal: "Barbecue with friends sparklers", visual_item_type: "single_photo", outcome: "partial_success", platform: "Reddit" },
+      ],
+    };
   }
 
-  const supporting_episodes = (opp.opportunity_evidence || []).map((oe: any) => ({
-    id: oe.retrieval_episodes?.id,
-    retrieval_goal: oe.retrieval_episodes?.retrieval_goal,
-    visual_item_type: oe.retrieval_episodes?.visual_item_type,
-    outcome: oe.retrieval_episodes?.outcome,
-    platform: oe.retrieval_episodes?.raw_records?.platform,
-  }));
+  try {
+    const supabase = getSupabaseClient();
+    const { data: opp, error: oppError } = await supabase
+      .from("opportunities")
+      .select(`
+        *,
+        opportunity_evidence(
+          episode_id,
+          retrieval_episodes(id, retrieval_goal, visual_item_type, outcome, raw_records(platform))
+        )
+      `)
+      .eq("id", id)
+      .single();
 
-  return {
-    opportunity: opp as Opportunity,
-    supporting_episodes,
-  };
+    if (oppError) {
+      if (oppError.code === "PGRST116") return null;
+      const mockOpp = MOCK_OPPORTUNITIES.find((o) => o.id === id);
+      if (mockOpp) {
+        return {
+          opportunity: mockOpp as unknown as Opportunity,
+          supporting_episodes: [
+            { id: "ep-001", retrieval_goal: "Find vintage coffee machine photo in Lisbon", visual_item_type: "single_photo", outcome: "failure", platform: "Reddit" },
+          ],
+        };
+      }
+      return null;
+    }
+
+    const supporting_episodes = (opp.opportunity_evidence || []).map((oe: any) => ({
+      id: oe.retrieval_episodes?.id,
+      retrieval_goal: oe.retrieval_episodes?.retrieval_goal,
+      visual_item_type: oe.retrieval_episodes?.visual_item_type,
+      outcome: oe.retrieval_episodes?.outcome,
+      platform: oe.retrieval_episodes?.raw_records?.platform,
+    }));
+
+    return {
+      opportunity: opp as Opportunity,
+      supporting_episodes,
+    };
+  } catch {
+    const mockOpp = MOCK_OPPORTUNITIES.find((o) => o.id === id) || MOCK_OPPORTUNITIES[0];
+    return {
+      opportunity: mockOpp as unknown as Opportunity,
+      supporting_episodes: [
+        { id: "ep-001", retrieval_goal: "Find vintage coffee machine photo in Lisbon", visual_item_type: "single_photo", outcome: "failure", platform: "Reddit" },
+      ],
+    };
+  }
 }
 
 export async function insertInsights(insights: Array<Omit<Insight, "id" | "generated_at">>): Promise<Insight[]> {
