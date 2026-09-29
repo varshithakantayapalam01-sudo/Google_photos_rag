@@ -1,1 +1,5 @@
+<<<<<<< HEAD
 # keep this directory in git
+=======
+# Public static assets directory
+>>>>>>> 449fdd7 (fix(deployment): add public dir, healthcheck route, and build-time env vars in Dockerfile for Railway)
